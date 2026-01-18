@@ -18,6 +18,6 @@ WORKDIR /usr/src/app
 COPY ./app .
 
 # Install python libraries
-RUN pip install --no-cache-dir RPi.GPIO spidev Pillow
+RUN pip install --no-cache-dir RPi.GPIO spidev Pillow requests
 
 CMD ["python3", "main.py"]
