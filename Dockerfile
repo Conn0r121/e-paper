@@ -1,16 +1,23 @@
 FROM python:3.9-slim-bookworm
-# Install C-libraries required by Waveshare's drivers
-RUN apt-get update && apt-get install -y \
-    gcc python3-dev libjpeg-dev zlib1g-dev libfreetype6-dev \
-    liblcms2-dev libopenjp2-7 libtiff5 \
+
+# Install all dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    python3-dev \
+    libjpeg-dev \
+    zlib1g-dev \
+    libfreetype6-dev \
+    liblcms2-dev \
+    libopenjp2-7-dev \
+    libtiff6 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
 
-# 1. Copy your app code AND the waveshare folders
+# Copy your files
 COPY ./app .
 
-# 2. Install the Python "glue" libraries
-RUN pip install RPi.GPIO spidev Pillow
+# Install python libraries
+RUN pip install --no-cache-dir RPi.GPIO spidev Pillow
 
 CMD ["python3", "main.py"]

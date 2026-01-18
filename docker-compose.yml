@@ -4,8 +4,8 @@ services:
   epaper-display:
     build:
       context: .
-      dockerfile: Dockerfile
-      network: host  # <--- ADD THIS LINE HERE
+      network: host
+    platform: linux/arm64
     container_name: epaper_dashboard
     privileged: true
     devices:
