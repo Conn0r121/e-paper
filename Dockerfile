@@ -1,5 +1,4 @@
-FROM python:3.9-slim-buster
-
+FROM python:3.9-slim-bookworm
 # Install C-libraries required by Waveshare's drivers
 RUN apt-get update && apt-get install -y \
     gcc python3-dev libjpeg-dev zlib1g-dev libfreetype6-dev \
