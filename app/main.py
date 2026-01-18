@@ -12,7 +12,7 @@ from waveshare_epd import epd5in83_V2
 
 logging.basicConfig(level=logging.INFO)
 
-def get_weather(city="London"):
+def get_weather(city="Rochester"):
     try:
         # We use format="%C+%t" to get "Sunny +20C"
         url = f"https://wttr.in/{city}?format=%C+%t"
