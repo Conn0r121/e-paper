@@ -23,8 +23,9 @@ def get_weather(city="Rochester"):
 
 def get_cpu_temp():
     try:
-        res = subprocess.check_output(['vcgencmd', 'measure_temp']).decode('utf-8')
-        return res.replace("temp=", "").replace("'C\n", "°C")
+        with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
+            temp = int(f.read()) / 1000
+        return f"{temp:.1f}°C"
     except:
         return "N/A"
 
