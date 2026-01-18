@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  epaper-display:
+    # 'build: .' tells Portainer to look for the 'Dockerfile' in the same folder
+    build: .
+    container_name: epaper_dashboard
+    
+    # Crucial for Raspberry Pi hardware interaction
+    privileged: true
+    
+    # Mapping the physical hardware pins to the container's virtual environment
+    devices:
+      - "/dev/gpiomem:/dev/gpiomem"     # General Purpose Input/Output
+      - "/dev/spidev0.0:/dev/spidev0.0" # SPI communication for the screen
+    
+    # Ensures the dashboard starts automatically when the Pi boots up
+    restart: always
+
+    # Optional: If your code uses specific folders for logs or images, 
+    # you can map them here so they persist outside the container.
+    volumes:
+      - ./logs:/usr/src/app/logs
