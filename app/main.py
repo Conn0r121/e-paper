@@ -12,7 +12,7 @@ from waveshare_epd import epd5in83_V2
 
 logging.basicConfig(level=logging.INFO)
 
-def get_weather(city="Rochester"):
+def get_weather(city="Rochester,NY"):
     try:
         # We use format="%C+%t" to get "Sunny +20C"
         url = f"https://wttr.in/{city}?format=%C+%t"
@@ -54,7 +54,7 @@ def update_display():
         draw.text((20, 200), time.strftime('%A, %B %d'), font=font_sm, fill=0)
 
         # 3. Weather (Live)
-        weather_data = get_weather("London") # Replace with your city
+        weather_data = get_weather("Rochester, NY")
         draw.text((350, 120), "Weather:", font=font_sm, fill=0)
         draw.text((350, 150), weather_data, font=font_md, fill=0)
 
