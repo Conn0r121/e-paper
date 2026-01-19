@@ -3,14 +3,16 @@ import os
 import time
 import requests
 import logging
+import platform
 from PIL import Image, ImageDraw, ImageFont
 
 # --- CONFIGURATION ---
-# Pointing to the waveshare_epd folder inside your /app directory
+ON_PI = platform.system() == "Linux"
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, current_dir)
 
-from waveshare_epd import epd5in83_V2 
+if ON_PI:
+    from waveshare_epd import epd5in83_V2
 
 logging.basicConfig(level=logging.INFO)
 
@@ -46,23 +48,31 @@ def get_cpu_temp():
 
 def update_display():
     try:
-        logging.info("Waking up e-Paper...")
-        epd = epd5in83_V2.EPD()
-        epd.init()
+        if ON_PI:
+            logging.info("Waking up e-Paper...")
+            epd = epd5in83_V2.EPD()
+            epd.init()
+            width, height = epd.width, epd.height
+        else:
+            logging.info("Running in Windows preview mode")
+            width, height = 648, 480  # 5.83" resolution
 
-        # Create blank canvas (648x480 for 5.83" V2)
-        canvas = Image.new('1', (epd.width, epd.height), 255)
+        canvas = Image.new('1', (width, height), 255)
         draw = ImageDraw.Draw(canvas)
 
         # Fonts (Assumes fonts-dejavu-core is installed via Dockerfile)
-        font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+        if ON_PI:
+            font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+        else:
+            font_path = "C:/Windows/Fonts/arialbd.ttf"
+        
         font_lg = ImageFont.truetype(font_path, 80)
         font_md = ImageFont.truetype(font_path, 40)
         font_sm = ImageFont.truetype(font_path, 26)
 
         # --- DRAWING: HEADER & TIME ---
         # Draw a black header bar
-        draw.rectangle((0, 0, epd.width, 100), fill=0)
+        draw.rectangle((0, 0, width, 100), fill=0)
         draw.text((20, 10), time.strftime('%H:%M'), font=font_lg, fill=255)
         draw.text((320, 20), "ROCHESTER, NY", font=font_sm, fill=255)
         draw.text((320, 55), time.strftime('%A, %b %d'), font=font_sm, fill=255)
@@ -73,7 +83,7 @@ def update_display():
         draw.text((20, 155), curr_weather, font=font_md, fill=0)
 
         # Horizontal Divider
-        draw.line((20, 225, epd.width-20, 225), fill=0, width=2)
+        draw.line((20, 225, width-20, 225), fill=0, width=2)
 
         # --- DRAWING: 3-DAY FORECAST (Lower Left) ---
         draw.text((20, 240), "3-DAY FORECAST", font=font_sm, fill=0)
@@ -92,11 +102,15 @@ def update_display():
         draw.text((420, 370), "Interval: 5m", font=font_sm, fill=0)
 
         # --- PUSH TO HARDWARE ---
-        logging.info("Pushing to display...")
-        epd.display(epd.getbuffer(canvas))
-        
-        logging.info("Putting display to deep sleep...")
-        epd.sleep()
+        if ON_PI:
+            epd.display(epd.getbuffer(canvas))
+            epd.sleep()
+        else:
+            output = "preview.png"
+            canvas.save(output)
+            logging.info(f"Saved preview to {output}")
+            os.startfile(output)
+
 
     except Exception as e:
         logging.error(f"Display update failed: {e}")
@@ -105,7 +119,10 @@ def update_display():
 
 if __name__ == "__main__":
     logging.info("E-Paper Dashboard Started.")
-    while True:
+    if ON_PI:
+        while True:
+            update_display()
+            logging.info("Cycle complete. Sleeping for 5 minutes...")
+            time.sleep(300)
+    else:
         update_display()
-        logging.info("Cycle complete. Sleeping for 5 minutes...")
-        time.sleep(300)
