@@ -18,11 +18,16 @@ logging.basicConfig(level=logging.INFO)
 
 # --- DATA FETCHING ---
 
-def get_weather_data(city="Rochester,NY"):
-    """Fetches current conditions and a 3-day forecast from wttr.in"""
+def get_weather_data():
+    """Automatically detects location via IP and fetches weather"""
     try:
-        # Current: Condition + Temp (Fahrenheit) + Precip %
-        # Change 'u' to 'm' if you prefer Metric/Celsius
+        # 1. Get current city name based on IP
+        # This returns a simple string like "Rochester"
+        city_res = requests.get("https://ipapi.co/city/", timeout=5)
+        city = city_res.text.strip() if city_res.status_code == 200 else ""
+        
+        # 2. Fetch weather from wttr.in
+        # If city is empty, wttr.in still works by using your IP automatically
         curr_url = f"https://wttr.in/{city}?u&format=%C+%t+%p"
         current = requests.get(curr_url, timeout=10).text.strip()
         
@@ -30,10 +35,11 @@ def get_weather_data(city="Rochester,NY"):
         fore_url = f"https://wttr.in/{city}?u&format=%l:+%h/%L\n"
         forecast = requests.get(fore_url, timeout=10).text.strip().split('\n')[:3]
         
-        return current, forecast
+        # Return city name so we can update the header too
+        return current, forecast, city.upper()
     except Exception as e:
-        logging.error(f"Weather error: {e}")
-        return "Weather Offline", ["N/A", "N/A", "N/A"]
+        logging.error(f"Auto-weather error: {e}")
+        return "Weather Offline", ["N/A", "N/A", "N/A"], "OFFLINE"
 
 def get_cpu_temp():
     """Reads Pi CPU temperature directly from system files"""
@@ -56,7 +62,6 @@ def update_display():
         else:
             logging.info("Running in Windows preview mode")
             width, height = 648, 480  # 5.83" resolution
-        print(width, height)
 
         canvas = Image.new('1', (width, height), 255)
         draw = ImageDraw.Draw(canvas)
@@ -71,48 +76,36 @@ def update_display():
         font_md = ImageFont.truetype(font_path, 40)
         font_sm = ImageFont.truetype(font_path, 26)
 
-        draw.rectangle((0, 0, width-1, height-1), outline=0)
-
-        # 3. Draw a Vertical Line every 100 pixels
-        for x in range(0, width, 100):
-            draw.line([(x, 0), (x, height)], fill=0)
-            draw.text((x + 2, 10), str(x), fill=0)
-
-        # 4. Draw a Horizontal Line every 100 pixels
-        for y in range(0, height, 100):
-            draw.line([(0, y), (width, y)], fill=0)
-            draw.text((10, y + 2), str(y), fill=0)
-
         # --- DRAWING: HEADER & TIME ---
+        curr_weather, weekly, detected_city = get_weather_data()
         # Draw a black header bar
-        # draw.rectangle((0, 0, width, 100), fill=0)
-        # draw.text((20, 10), time.strftime('%H:%M'), font=font_lg, fill=255)
-        # draw.text((320, 20), "ROCHESTER, NY", font=font_sm, fill=255)
-        # draw.text((320, 55), time.strftime('%A, %b %d'), font=font_sm, fill=255)
+        draw.rectangle((0, 0, width - 1, 100), fill=0)
+        draw.text((20, 10), time.strftime('%H:%M'), font=font_lg, fill=255)
+        draw.text((320, 20), detected_city, font=font_sm, fill=255)
+        draw.text((320, 55), time.strftime('%A, %b %d'), font=font_sm, fill=255)
 
-        # # --- DRAWING: CURRENT WEATHER ---
-        # curr_weather, weekly = get_weather_data("Rochester,NY")
-        # draw.text((20, 120), "CURRENT CONDITIONS", font=font_sm, fill=0)
-        # draw.text((20, 155), curr_weather, font=font_md, fill=0)
+        # --- DRAWING: CURRENT WEATHER ---
+        draw.text((20, 120), "CURRENT CONDITIONS", font=font_sm, fill=0)
+        draw.text((20, 155), curr_weather, font=font_md, fill=0)
 
-        # # Horizontal Divider
-        # draw.line((20, 225, width-20, 225), fill=0, width=2)
+        # Horizontal Divider
+        draw.line((20, 225, width-20, 225), fill=0, width=2)
 
-        # # --- DRAWING: 3-DAY FORECAST (Lower Left) ---
-        # draw.text((20, 240), "3-DAY FORECAST", font=font_sm, fill=0)
-        # y_pos = 285
-        # for day in weekly:
-        #     draw.text((20, y_pos), day, font=font_md, fill=0)
-        #     y_pos += 55
+        # --- DRAWING: 3-DAY FORECAST (Lower Left) ---
+        draw.text((20, 240), "3-DAY FORECAST", font=font_sm, fill=0)
+        y_pos = 285
+        for day in weekly:
+            draw.text((20, y_pos), day, font=font_md, fill=0)
+            y_pos += 55
 
-        # # --- DRAWING: SYSTEM INFO (Lower Right) ---
-        # # Vertical Divider
-        # draw.line((400, 240, 400, 450), fill=0, width=2)
+        # --- DRAWING: SYSTEM INFO (Lower Right) ---
+        # Vertical Divider
+        draw.line((400, 240, 400, 450), fill=0, width=2)
         
-        # draw.text((420, 240), "SYSTEM STATUS", font=font_sm, fill=0)
-        # draw.text((420, 290), f"CPU: {get_cpu_temp()}", font=font_sm, fill=0)
-        # draw.text((420, 330), f"UP: {time.strftime('%H:%M')}", font=font_sm, fill=0)
-        # draw.text((420, 370), "Interval: 5m", font=font_sm, fill=0)
+        draw.text((420, 240), "SYSTEM STATUS", font=font_sm, fill=0)
+        draw.text((420, 290), f"CPU: {get_cpu_temp()}", font=font_sm, fill=0)
+        draw.text((420, 330), f"UP: {time.strftime('%H:%M')}", font=font_sm, fill=0)
+        draw.text((420, 370), "Interval: 5m", font=font_sm, fill=0)
 
         # --- PUSH TO HARDWARE ---
         if ON_PI:
