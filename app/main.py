@@ -56,6 +56,7 @@ def update_display():
         else:
             logging.info("Running in Windows preview mode")
             width, height = 648, 480  # 5.83" resolution
+        print(width, height)
 
         canvas = Image.new('1', (width, height), 255)
         draw = ImageDraw.Draw(canvas)
