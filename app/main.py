@@ -71,36 +71,48 @@ def update_display():
         font_md = ImageFont.truetype(font_path, 40)
         font_sm = ImageFont.truetype(font_path, 26)
 
+        draw.rectangle((0, 0, width-1, height-1), outline=0)
+
+        # 3. Draw a Vertical Line every 100 pixels
+        for x in range(0, width, 100):
+            draw.line([(x, 0), (x, height)], fill=0)
+            draw.text((x + 2, 10), str(x), fill=0)
+
+        # 4. Draw a Horizontal Line every 100 pixels
+        for y in range(0, height, 100):
+            draw.line([(0, y), (width, y)], fill=0)
+            draw.text((10, y + 2), str(y), fill=0)
+
         # --- DRAWING: HEADER & TIME ---
         # Draw a black header bar
-        draw.rectangle((0, 0, width, 100), fill=0)
-        draw.text((20, 10), time.strftime('%H:%M'), font=font_lg, fill=255)
-        draw.text((320, 20), "ROCHESTER, NY", font=font_sm, fill=255)
-        draw.text((320, 55), time.strftime('%A, %b %d'), font=font_sm, fill=255)
+        # draw.rectangle((0, 0, width, 100), fill=0)
+        # draw.text((20, 10), time.strftime('%H:%M'), font=font_lg, fill=255)
+        # draw.text((320, 20), "ROCHESTER, NY", font=font_sm, fill=255)
+        # draw.text((320, 55), time.strftime('%A, %b %d'), font=font_sm, fill=255)
 
-        # --- DRAWING: CURRENT WEATHER ---
-        curr_weather, weekly = get_weather_data("Rochester,NY")
-        draw.text((20, 120), "CURRENT CONDITIONS", font=font_sm, fill=0)
-        draw.text((20, 155), curr_weather, font=font_md, fill=0)
+        # # --- DRAWING: CURRENT WEATHER ---
+        # curr_weather, weekly = get_weather_data("Rochester,NY")
+        # draw.text((20, 120), "CURRENT CONDITIONS", font=font_sm, fill=0)
+        # draw.text((20, 155), curr_weather, font=font_md, fill=0)
 
-        # Horizontal Divider
-        draw.line((20, 225, width-20, 225), fill=0, width=2)
+        # # Horizontal Divider
+        # draw.line((20, 225, width-20, 225), fill=0, width=2)
 
-        # --- DRAWING: 3-DAY FORECAST (Lower Left) ---
-        draw.text((20, 240), "3-DAY FORECAST", font=font_sm, fill=0)
-        y_pos = 285
-        for day in weekly:
-            draw.text((20, y_pos), day, font=font_md, fill=0)
-            y_pos += 55
+        # # --- DRAWING: 3-DAY FORECAST (Lower Left) ---
+        # draw.text((20, 240), "3-DAY FORECAST", font=font_sm, fill=0)
+        # y_pos = 285
+        # for day in weekly:
+        #     draw.text((20, y_pos), day, font=font_md, fill=0)
+        #     y_pos += 55
 
-        # --- DRAWING: SYSTEM INFO (Lower Right) ---
-        # Vertical Divider
-        draw.line((400, 240, 400, 450), fill=0, width=2)
+        # # --- DRAWING: SYSTEM INFO (Lower Right) ---
+        # # Vertical Divider
+        # draw.line((400, 240, 400, 450), fill=0, width=2)
         
-        draw.text((420, 240), "SYSTEM STATUS", font=font_sm, fill=0)
-        draw.text((420, 290), f"CPU: {get_cpu_temp()}", font=font_sm, fill=0)
-        draw.text((420, 330), f"UP: {time.strftime('%H:%M')}", font=font_sm, fill=0)
-        draw.text((420, 370), "Interval: 5m", font=font_sm, fill=0)
+        # draw.text((420, 240), "SYSTEM STATUS", font=font_sm, fill=0)
+        # draw.text((420, 290), f"CPU: {get_cpu_temp()}", font=font_sm, fill=0)
+        # draw.text((420, 330), f"UP: {time.strftime('%H:%M')}", font=font_sm, fill=0)
+        # draw.text((420, 370), "Interval: 5m", font=font_sm, fill=0)
 
         # --- PUSH TO HARDWARE ---
         if ON_PI:
