@@ -1,0 +1,3 @@
+# Dev-only: needed to run app/google_auth.py once to mint a refresh token.
+# NOT installed on the Pi — runtime google_sync.py uses only `requests`.
+google-auth-oauthlib==1.2.1

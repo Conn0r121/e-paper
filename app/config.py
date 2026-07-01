@@ -50,6 +50,13 @@ HTTP_TIMEOUT = _env_int("HTTP_TIMEOUT", 10)
 # git and out of shared logs. Set it via the environment only.
 WORK_ICS_URL = os.environ.get("WORK_ICS_URL", "").strip()
 
+# Google (Calendar + Tasks) OAuth. All secrets — set via the environment only,
+# never commit them. Generate the refresh token once with app/google_auth.py.
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
+GOOGLE_REFRESH_TOKEN = os.environ.get("GOOGLE_REFRESH_TOKEN", "").strip()
+GOOGLE_CALENDAR_ID = os.environ.get("GOOGLE_CALENDAR_ID", "primary").strip()
+
 # --- Panel ------------------------------------------------------------------
 # Waveshare 5.83" V2 is 648 x 480. Used directly for the Windows preview and
 # as a fallback if the hardware doesn't report its own dimensions.

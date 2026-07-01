@@ -64,17 +64,17 @@ def parse_ics(text, day=None, tz=None, source="work"):
         title = str(ev.get("SUMMARY", "(no title)")).strip() or "(no title)"
         all_day = isinstance(begin, dt.date) and not isinstance(begin, dt.datetime)
         if all_day:
-            sort_key = (0, dt.time.min)
+            sort_key = (0, 0)
             label = "All day"
         else:
             local = begin.astimezone(tz)
-            sort_key = (1, local.timetz())
+            sort_key = (1, local.hour * 60 + local.minute)
             label = _fmt_time(local)
-        rows.append((sort_key, AgendaEvent(time_label=label, title=title,
-                                           source=source)))
+        rows.append(AgendaEvent(time_label=label, title=title, source=source,
+                                sort_key=sort_key))
 
-    rows.sort(key=lambda r: r[0])
-    return [event for _, event in rows]
+    rows.sort(key=lambda e: e.sort_key)
+    return rows
 
 
 def fetch_work_events():

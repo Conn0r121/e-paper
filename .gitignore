@@ -13,3 +13,6 @@ preview.png
 
 # Secrets (calendar URLs, tokens)
 .env
+client_secret*.json
+token.json
+*.google.env

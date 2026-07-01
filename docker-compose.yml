@@ -18,6 +18,13 @@ services:
       # Secret work-calendar ICS URL. Set in a local .env file (git-ignored)
       # or in the Portainer stack env — never commit the actual URL.
       - WORK_ICS_URL=${WORK_ICS_URL:-}
+      # Google (Calendar + Tasks) secrets — set these in the Portainer stack
+      # environment (never in git; this repo is public). Mint them once with
+      # app/google_auth.py. Empty = Google sources simply stay off.
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GOOGLE_REFRESH_TOKEN=${GOOGLE_REFRESH_TOKEN:-}
+      - GOOGLE_CALENDAR_ID=${GOOGLE_CALENDAR_ID:-primary}
       # Workaround for the fading panel: white-on-black holds far better.
       # Set to 0 to go back to the light design.
       - DARK_MODE=1

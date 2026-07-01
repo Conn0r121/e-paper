@@ -18,6 +18,8 @@ class AgendaEvent:
     time_label: str        # "9:00 AM" or "All day"
     title: str             # "Standup"
     source: str = "personal"  # "work" (filled marker) or "personal" (hollow)
+    # Sort key for merging sources: all-day = (0, 0), timed = (1, minutes).
+    sort_key: tuple = (1, 0)
 
 
 @dataclass
@@ -96,22 +98,22 @@ def get_weather():
 def get_agenda():
     """Return today's merged calendar as a list[AgendaEvent], soonest first.
 
-    Currently sources the work calendar (M365 published ICS). Google Calendar
-    will be merged in here next.
+    Merges the work calendar (M365 published ICS) with Google Calendar, sorted
+    on a shared key (all-day events first, then by start time).
     """
-    import calendars  # lazy import avoids a circular import at module load
+    import calendars     # lazy imports avoid a circular import at module load
+    import google_sync
 
-    # parse_ics already returns events sorted by real start time. When Google
-    # Calendar is added, both sources will merge on a proper datetime key.
-    return calendars.fetch_work_events()
+    events = calendars.fetch_work_events() + google_sync.fetch_events()
+    events.sort(key=lambda e: e.sort_key)
+    return events
 
 
 def get_tasks():
-    """Return open to-do items as a list[Task].
+    """Return open to-do items as a list[Task] (from Google Tasks)."""
+    import google_sync
 
-    Placeholder until Google Tasks is wired up (Google Tasks API, OAuth).
-    """
-    return []
+    return google_sync.fetch_tasks()
 
 
 def get_cpu_temp():
