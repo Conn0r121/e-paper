@@ -24,6 +24,10 @@ def _env_int(name, default):
 # sleep and the on-screen "Interval" label both read from here.
 REFRESH_INTERVAL = _env_int("REFRESH_INTERVAL", 300)
 
+# Ghost-busting: flash the panel fully black/white every N refresh cycles to
+# scrub accumulated ghosting haze. Also runs once at startup. 0 disables.
+DEEP_CLEAN_EVERY = _env_int("DEEP_CLEAN_EVERY", 12)
+
 # --- Weather ----------------------------------------------------------------
 # Leave WEATHER_LOCATION empty to let wttr.in auto-detect from the Pi's IP.
 WEATHER_LOCATION = os.environ.get("WEATHER_LOCATION", "").strip()
