@@ -21,6 +21,10 @@ import render
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
+# Apply the TZ environment variable so clock/date reflect local time, not UTC.
+if hasattr(time, "tzset"):
+    time.tzset()
+
 if config.ON_PI:
     from waveshare_epd import epd5in83_V2
 

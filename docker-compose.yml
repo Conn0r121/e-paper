@@ -9,6 +9,8 @@ services:
     container_name: epaper_dashboard
     privileged: true
     environment:
+      # Display timezone (needs tzdata in the image, installed via Dockerfile)
+      - TZ=${TZ:-America/New_York}
       # How often the display refreshes, in seconds (default 300 = 5 min)
       - REFRESH_INTERVAL=300
       # Leave blank to auto-detect from IP, or set e.g. "Rochester"
