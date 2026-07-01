@@ -1,0 +1,10 @@
+# Keep the build context (and the image sent to the Pi) small
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.git/
+.gitignore
+preview.png
+*.md

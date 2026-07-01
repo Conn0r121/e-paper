@@ -1,2 +1,12 @@
-venv
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Local preview output
 preview.png
