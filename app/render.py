@@ -23,7 +23,7 @@ All layout lives here. To redesign the display, this is the file to edit.
 
 import functools
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 import config
 
@@ -199,8 +199,15 @@ def _draw_footer(draw, width, d):
     _right(draw, right_edge, y, status, font)
 
 
-def render_dashboard(width, height, d):
-    """Build and return the dashboard image for DashboardData ``d``."""
+def render_dashboard(width, height, d, dark=None):
+    """Build and return the dashboard image for DashboardData ``d``.
+
+    When ``dark`` is true (defaults to config.DARK_MODE) the finished image is
+    inverted to white-on-black — a mostly-black screen that a fading panel holds
+    far better than a mostly-white one.
+    """
+    dark = config.DARK_MODE if dark is None else dark
+
     canvas = Image.new("1", (width, height), WHITE)
     draw = ImageDraw.Draw(canvas)
 
@@ -217,4 +224,6 @@ def render_dashboard(width, height, d):
     _draw_tasks(draw, col2_x, col_w, d.tasks)
     _draw_footer(draw, width, d)
 
+    if dark:
+        canvas = ImageOps.invert(canvas.convert("L")).convert("1")
     return canvas

@@ -33,6 +33,11 @@ DEEP_CLEAN_EVERY = _env_int("DEEP_CLEAN_EVERY", 12)
 # apart from "deep sleep relaxes the image" (software). See main.run_diagnostic.
 DIAGNOSTIC = os.environ.get("DIAGNOSTIC", "").strip() not in ("", "0")
 
+# Dark mode: draw white-on-black instead of black-on-white. A mostly-black
+# screen holds far better on a panel that can't sustain a mostly-white image,
+# so this is the workaround for the fading-panel issue. DARK_MODE=1 to enable.
+DARK_MODE = os.environ.get("DARK_MODE", "").strip() not in ("", "0")
+
 # --- Weather ----------------------------------------------------------------
 # Leave WEATHER_LOCATION empty to let wttr.in auto-detect from the Pi's IP.
 WEATHER_LOCATION = os.environ.get("WEATHER_LOCATION", "").strip()
