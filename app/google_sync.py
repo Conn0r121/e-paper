@@ -44,6 +44,16 @@ def _fmt_time(when):
     return f"{hour12}:{when.minute:02d} {ampm}"
 
 
+def _end_minutes(end_info, midnight, tz, start_min):
+    """Minutes-from-midnight when a timed event ends; fallback start + 30."""
+    when = end_info.get("dateTime")
+    if when:
+        end_local = dt.datetime.fromisoformat(
+            when.replace("Z", "+00:00")).astimezone(tz)
+        return int((end_local - midnight).total_seconds() // 60)
+    return start_min + 30
+
+
 def _today_bounds(tz):
     start = dt.datetime.combine(dt.datetime.now(tz).date(), dt.time.min, tzinfo=tz)
     return start, start + dt.timedelta(days=1)
@@ -83,9 +93,12 @@ def fetch_events():
             else:
                 when = dt.datetime.fromisoformat(
                     start_info["dateTime"].replace("Z", "+00:00")).astimezone(tz)
+                start_min = when.hour * 60 + when.minute
                 events.append(AgendaEvent(
                     time_label=_fmt_time(when), title=title, source="personal",
-                    sort_key=(1, when.hour * 60 + when.minute)))
+                    sort_key=(1, start_min),
+                    end_minutes=_end_minutes(item.get("end", {}), start, tz,
+                                             start_min)))
         return events
     except Exception as e:
         log.error("Google Calendar fetch failed: %s", e)

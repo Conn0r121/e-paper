@@ -57,6 +57,11 @@ GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
 GOOGLE_REFRESH_TOKEN = os.environ.get("GOOGLE_REFRESH_TOKEN", "").strip()
 GOOGLE_CALENDAR_ID = os.environ.get("GOOGLE_CALENDAR_ID", "primary").strip()
 
+# Hide events that have already ended, so the schedule shows only what's in
+# progress or upcoming (all-day events always stay). HIDE_PAST_EVENTS=0 to show
+# the full day.
+HIDE_PAST_EVENTS = os.environ.get("HIDE_PAST_EVENTS", "1").strip() not in ("", "0")
+
 # --- Panel ------------------------------------------------------------------
 # Waveshare 5.83" V2 is 648 x 480. Used directly for the Windows preview and
 # as a fallback if the hardware doesn't report its own dimensions.

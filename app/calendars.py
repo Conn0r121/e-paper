@@ -31,6 +31,17 @@ def _is_cancelled(ev):
     return summary.startswith(_CANCELLED_PREFIXES)
 
 
+def _end_minutes(dtend, midnight, tz, start_min):
+    """Minutes-from-midnight when a timed event ends.
+
+    Falls back to start + 30 min when DTEND is missing or is a bare date.
+    """
+    if dtend is not None and isinstance(dtend.dt, dt.datetime):
+        end_local = dtend.dt.astimezone(tz)
+        return int((end_local - midnight).total_seconds() // 60)
+    return start_min + 30
+
+
 def _fmt_time(when):
     """Format a datetime as a compact 12-hour label, e.g. '9:05 AM'."""
     hour12 = when.hour % 12 or 12
@@ -66,12 +77,14 @@ def parse_ics(text, day=None, tz=None, source="work"):
         if all_day:
             sort_key = (0, 0)
             label = "All day"
+            end_minutes = None
         else:
             local = begin.astimezone(tz)
             sort_key = (1, local.hour * 60 + local.minute)
             label = _fmt_time(local)
+            end_minutes = _end_minutes(ev.get("DTEND"), start, tz, sort_key[1])
         rows.append(AgendaEvent(time_label=label, title=title, source=source,
-                                sort_key=sort_key))
+                                sort_key=sort_key, end_minutes=end_minutes))
 
     rows.sort(key=lambda e: e.sort_key)
     return rows

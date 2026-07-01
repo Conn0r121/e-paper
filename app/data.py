@@ -20,6 +20,9 @@ class AgendaEvent:
     source: str = "personal"  # "work" (filled marker) or "personal" (hollow)
     # Sort key for merging sources: all-day = (0, 0), timed = (1, minutes).
     sort_key: tuple = (1, 0)
+    # Minutes-since-midnight when the event ends (may exceed 1440 for multi-day).
+    # None = all-day / unknown end; such events are never treated as "past".
+    end_minutes: int = None
 
 
 @dataclass
@@ -105,8 +108,18 @@ def get_agenda():
     import google_sync
 
     events = calendars.fetch_work_events() + google_sync.fetch_events()
+    if config.HIDE_PAST_EVENTS:
+        events = _drop_ended(events)
     events.sort(key=lambda e: e.sort_key)
     return events
+
+
+def _drop_ended(events):
+    """Keep all-day events and any timed event that hasn't ended yet."""
+    now = time.localtime()
+    now_min = now.tm_hour * 60 + now.tm_min
+    return [e for e in events
+            if e.end_minutes is None or e.end_minutes > now_min]
 
 
 def get_tasks():
