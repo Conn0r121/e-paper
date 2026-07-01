@@ -15,6 +15,9 @@ services:
       - WEATHER_LOCATION=
       # "u" = imperial (F), "m" = metric (C)
       - WEATHER_UNITS=u
+      # Secret work-calendar ICS URL. Set in a local .env file (git-ignored)
+      # or in the Portainer stack env — never commit the actual URL.
+      - WORK_ICS_URL=${WORK_ICS_URL:-}
     devices:
       - "/dev/gpiomem:/dev/gpiomem"
       - "/dev/spidev0.0:/dev/spidev0.0"

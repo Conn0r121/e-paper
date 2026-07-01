@@ -10,3 +10,6 @@ env/
 
 # Local preview output
 preview.png
+
+# Secrets (calendar URLs, tokens)
+.env

@@ -2,3 +2,5 @@ Pillow==11.0.0
 requests==2.32.3
 RPi.GPIO==0.7.1
 spidev==3.6
+icalendar==6.1.0
+recurring-ical-events==3.3.4

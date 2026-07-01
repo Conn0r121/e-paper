@@ -13,6 +13,7 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import config
+import data
 import render
 
 logging.basicConfig(level=logging.INFO)
@@ -25,16 +26,17 @@ if config.ON_PI:
 def update_display():
     """Render one frame and push it to the panel (or save a preview)."""
     try:
+        frame = data.collect()
         if config.ON_PI:
             log.info("Waking up e-Paper...")
             epd = epd5in83_V2.EPD()
             epd.init()
-            canvas = render.render_dashboard(epd.width, epd.height)
+            canvas = render.render_dashboard(epd.width, epd.height, frame)
             epd.display(epd.getbuffer(canvas))
             epd.sleep()
         else:
             log.info("Running in Windows preview mode")
-            canvas = render.render_dashboard(config.PANEL_WIDTH, config.PANEL_HEIGHT)
+            canvas = render.render_dashboard(config.PANEL_WIDTH, config.PANEL_HEIGHT, frame)
             canvas.save(config.PREVIEW_FILE)
             log.info("Saved preview to %s", config.PREVIEW_FILE)
             os.startfile(config.PREVIEW_FILE)

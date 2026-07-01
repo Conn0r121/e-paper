@@ -31,6 +31,11 @@ WEATHER_LOCATION = os.environ.get("WEATHER_LOCATION", "").strip()
 WEATHER_UNITS = os.environ.get("WEATHER_UNITS", "u")
 HTTP_TIMEOUT = _env_int("HTTP_TIMEOUT", 10)
 
+# --- Calendars --------------------------------------------------------------
+# Secret published-calendar ICS URL (e.g. from Outlook/M365). Keep this out of
+# git and out of shared logs. Set it via the environment only.
+WORK_ICS_URL = os.environ.get("WORK_ICS_URL", "").strip()
+
 # --- Panel ------------------------------------------------------------------
 # Waveshare 5.83" V2 is 648 x 480. Used directly for the Windows preview and
 # as a fallback if the hardware doesn't report its own dimensions.
