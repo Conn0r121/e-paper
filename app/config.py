@@ -28,6 +28,11 @@ REFRESH_INTERVAL = _env_int("REFRESH_INTERVAL", 300)
 # scrub accumulated ghosting haze. Also runs once at startup. 0 disables.
 DEEP_CLEAN_EVERY = _env_int("DEEP_CLEAN_EVERY", 12)
 
+# One-shot hardware test: when set (DIAGNOSTIC=1), run a hold-and-observe
+# sequence instead of the normal loop, to tell "pixels don't hold" (hardware)
+# apart from "deep sleep relaxes the image" (software). See main.run_diagnostic.
+DIAGNOSTIC = os.environ.get("DIAGNOSTIC", "").strip() not in ("", "0")
+
 # --- Weather ----------------------------------------------------------------
 # Leave WEATHER_LOCATION empty to let wttr.in auto-detect from the Pi's IP.
 WEATHER_LOCATION = os.environ.get("WEATHER_LOCATION", "").strip()

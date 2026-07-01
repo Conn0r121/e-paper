@@ -69,8 +69,47 @@ def _should_deep_clean(cycle):
     return every > 0 and cycle % every == 0
 
 
+def run_diagnostic():
+    """Hold images WITHOUT sleeping, then sleep, to localize the fade.
+
+    Watch the panel and match it to the log lines:
+      * If BLACK or the DASHBOARD fade during their "holding, powered" window
+        (before we ever call sleep) -> the pixels are not holding charge, which
+        is a hardware fault -> the (new) panel is likely defective; return it.
+      * If they stay sharp while powered but fade only after "entering deep
+        sleep" -> deep sleep is relaxing the image, and we fix it in software
+        by not deep-sleeping between refreshes.
+    """
+    hold = 25
+    black = Image.new("1", (config.PANEL_WIDTH, config.PANEL_HEIGHT), 0)
+    frame = render.render_dashboard(config.PANEL_WIDTH, config.PANEL_HEIGHT,
+                                    data.collect())
+
+    epd = epd5in83_V2.EPD()
+    epd.init()
+
+    log.info("DIAG 1/3: full BLACK, holding %ds powered (NOT sleeping) — "
+             "does it stay deep black?", hold)
+    epd.display(epd.getbuffer(black))
+    time.sleep(hold)
+
+    log.info("DIAG 2/3: DASHBOARD, holding %ds powered (NOT sleeping) — "
+             "does it stay sharp?", hold)
+    epd.display(epd.getbuffer(frame))
+    time.sleep(hold)
+
+    log.info("DIAG 3/3: entering DEEP SLEEP now — watch %ds for the image to "
+             "change/fade after sleep", hold)
+    epd.sleep()
+    time.sleep(hold)
+    log.info("DIAG done. Unset DIAGNOSTIC to resume the normal dashboard.")
+
+
 def main():
     log.info("E-Paper Dashboard started.")
+    if config.ON_PI and config.DIAGNOSTIC:
+        run_diagnostic()
+        return
     if not config.ON_PI:
         update_display()
         return
