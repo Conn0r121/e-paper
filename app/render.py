@@ -31,6 +31,13 @@ import config
 BLACK = 0
 WHITE = 255
 
+# E-ink has no grey: contrast = ink coverage. Fatten every glyph by a pixel and
+# use thick rules so thin strokes don't average out to grey at viewing distance.
+STROKE = 1
+RULE_W = 3          # horizontal divider thickness
+DIVIDER_W = 2       # vertical column divider thickness
+MARKER_W_PX = 3     # bullet / checkbox outline thickness
+
 # --- Layout -----------------------------------------------------------------
 MARGIN = 28
 HEADER_RULE_Y = 132       # hairline under the header
@@ -71,21 +78,27 @@ def _fit(draw, text, font, max_w):
     return (text.rstrip() + ellipsis) if text else ellipsis
 
 
+def _text(draw, xy, s, font, fill=BLACK):
+    """Draw text with a stroke so it renders as solid black ink on e-paper."""
+    draw.text(xy, s, font=font, fill=fill, stroke_width=STROKE, stroke_fill=fill)
+
+
 def _right(draw, x_right, y, text, font, fill=BLACK):
     """Draw text right-aligned to x_right."""
-    draw.text((x_right - draw.textlength(text, font=font), y), text,
-              font=font, fill=fill)
+    _text(draw, (x_right - draw.textlength(text, font=font), y), text, font, fill)
 
 
 def _bullet(draw, x, cy, filled, r=6):
     """Draw a calendar-source marker: filled = work, hollow = personal."""
     box = (x, cy - r, x + 2 * r, cy + r)
-    draw.ellipse(box, fill=BLACK if filled else WHITE, outline=BLACK, width=2)
+    draw.ellipse(box, fill=BLACK if filled else WHITE, outline=BLACK,
+                 width=MARKER_W_PX)
 
 
 def _checkbox(draw, x, cy, s=15):
     """Draw an empty checkbox centred vertically on cy."""
-    draw.rectangle((x, cy - s // 2, x + s, cy + s // 2), outline=BLACK, width=2)
+    draw.rectangle((x, cy - s // 2, x + s, cy + s // 2), outline=BLACK,
+                   width=MARKER_W_PX)
 
 
 def _fit_rows(top, bottom):
@@ -94,22 +107,22 @@ def _fit_rows(top, bottom):
 
 def _draw_header(draw, width, d):
     right_edge = width - MARGIN
-    draw.text((MARGIN, 18), d.weekday, font=_font(F_WEEKDAY), fill=BLACK)
-    draw.text((MARGIN, 88), d.date_long, font=_font(F_DATE), fill=BLACK)
+    _text(draw, (MARGIN, 18), d.weekday, _font(F_WEEKDAY))
+    _text(draw, (MARGIN, 88), d.date_long, _font(F_DATE))
 
     _right(draw, right_edge, 22, d.clock, _font(F_CLOCK))
     weather = _fit(draw, f"{d.temp}  {d.condition}", _font(F_WEATHER), width // 2)
     _right(draw, right_edge, 90, weather, _font(F_WEATHER))
 
-    draw.line((MARGIN, HEADER_RULE_Y, right_edge, HEADER_RULE_Y), fill=BLACK)
+    draw.line((MARGIN, HEADER_RULE_Y, right_edge, HEADER_RULE_Y), fill=BLACK,
+              width=RULE_W)
 
 
 def _draw_schedule(draw, x, w, events):
     """Left column: today's merged calendar."""
-    draw.text((x, COL_TOP), "SCHEDULE", font=_font(F_LABEL), fill=BLACK)
+    _text(draw, (x, COL_TOP), "SCHEDULE", _font(F_LABEL))
     if not events:
-        draw.text((x, COL_FIRST_ROW + 6), "Nothing scheduled",
-                  font=_font(F_EMPTY), fill=BLACK)
+        _text(draw, (x, COL_FIRST_ROW + 6), "Nothing scheduled", _font(F_EMPTY))
         return
 
     rows = _fit_rows(COL_FIRST_ROW, FOOTER_RULE_Y)
@@ -126,22 +139,19 @@ def _draw_schedule(draw, x, w, events):
     for ev in shown:
         cy = y + F_ITEM // 2
         _bullet(draw, x, cy, filled=(ev.source == "work"))
-        draw.text((time_x, y), ev.time_label, font=_font(F_ITEM_TIME), fill=BLACK)
-        draw.text((title_x, y),
-                  _fit(draw, ev.title, _font(F_ITEM), title_w),
-                  font=_font(F_ITEM), fill=BLACK)
+        _text(draw, (time_x, y), ev.time_label, _font(F_ITEM_TIME))
+        _text(draw, (title_x, y), _fit(draw, ev.title, _font(F_ITEM), title_w),
+              _font(F_ITEM))
         y += ROW_H
     if overflow:
-        draw.text((time_x, y), f"+{overflow} more",
-                  font=_font(F_ITEM_TIME), fill=BLACK)
+        _text(draw, (time_x, y), f"+{overflow} more", _font(F_ITEM_TIME))
 
 
 def _draw_tasks(draw, x, w, tasks):
     """Right column: open to-do items."""
-    draw.text((x, COL_TOP), "TASKS", font=_font(F_LABEL), fill=BLACK)
+    _text(draw, (x, COL_TOP), "TASKS", _font(F_LABEL))
     if not tasks:
-        draw.text((x, COL_FIRST_ROW + 6), "No tasks",
-                  font=_font(F_EMPTY), fill=BLACK)
+        _text(draw, (x, COL_FIRST_ROW + 6), "No tasks", _font(F_EMPTY))
         return
 
     rows = _fit_rows(COL_FIRST_ROW, FOOTER_RULE_Y)
@@ -152,13 +162,11 @@ def _draw_tasks(draw, x, w, tasks):
     y = COL_FIRST_ROW
     for task in shown:
         _checkbox(draw, x, y + F_ITEM // 2)
-        draw.text((title_x, y),
-                  _fit(draw, task.title, _font(F_ITEM), title_w),
-                  font=_font(F_ITEM), fill=BLACK)
+        _text(draw, (title_x, y), _fit(draw, task.title, _font(F_ITEM), title_w),
+              _font(F_ITEM))
         y += ROW_H
     if overflow:
-        draw.text((title_x, y), f"+{overflow} more",
-                  font=_font(F_ITEM_TIME), fill=BLACK)
+        _text(draw, (title_x, y), f"+{overflow} more", _font(F_ITEM_TIME))
 
 
 def _paginate(items, rows):
@@ -171,17 +179,18 @@ def _paginate(items, rows):
 
 def _draw_footer(draw, width, d):
     right_edge = width - MARGIN
-    draw.line((MARGIN, FOOTER_RULE_Y, right_edge, FOOTER_RULE_Y), fill=BLACK)
+    draw.line((MARGIN, FOOTER_RULE_Y, right_edge, FOOTER_RULE_Y), fill=BLACK,
+              width=RULE_W)
     y = FOOTER_RULE_Y + 12
 
     # Legend on the left: ● work  ○ personal
     font = _font(F_FOOTER)
     cy = y + F_FOOTER // 2
     _bullet(draw, MARGIN, cy, filled=True, r=5)
-    draw.text((MARGIN + 16, y), "work", font=font, fill=BLACK)
+    _text(draw, (MARGIN + 16, y), "work", font)
     off = MARGIN + 16 + draw.textlength("work", font=font) + 18
     _bullet(draw, int(off), cy, filled=False, r=5)
-    draw.text((int(off) + 16, y), "personal", font=font, fill=BLACK)
+    _text(draw, (int(off) + 16, y), "personal", font)
     legend_end = int(off) + 16 + draw.textlength("personal", font=font)
 
     # System status on the right, using whatever width the legend leaves
@@ -201,7 +210,8 @@ def render_dashboard(width, height, d):
     col1_x = MARGIN
     col2_x = MARGIN + col_w + COL_GAP
     divider_x = MARGIN + col_w + COL_GAP // 2
-    draw.line((divider_x, COL_TOP, divider_x, FOOTER_RULE_Y - 8), fill=BLACK)
+    draw.line((divider_x, COL_TOP, divider_x, FOOTER_RULE_Y - 8), fill=BLACK,
+              width=DIVIDER_W)
 
     _draw_schedule(draw, col1_x, col_w, d.events)
     _draw_tasks(draw, col2_x, col_w, d.tasks)
