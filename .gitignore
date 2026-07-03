@@ -16,3 +16,4 @@ preview.png
 client_secret*.json
 token.json
 *.google.env
+google_creds.env

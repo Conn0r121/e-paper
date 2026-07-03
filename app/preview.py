@@ -16,6 +16,26 @@ Output goes to preview.png (git-ignored).
 import argparse
 import os
 
+
+def _load_local_env():
+    """Load google_creds.env / .env from the repo root so --live works with no
+    manual env setup. Real environment values take precedence."""
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    for name in ("google_creds.env", ".env"):
+        path = os.path.join(repo_root, name)
+        if not os.path.exists(path):
+            continue
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, val = line.split("=", 1)
+                os.environ.setdefault(key.strip(), val.strip())
+
+
+_load_local_env()  # must run before config is imported (it reads env at import)
+
 from PIL import Image, ImageDraw, ImageFont
 
 import config

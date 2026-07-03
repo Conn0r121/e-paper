@@ -48,11 +48,48 @@ def main():
         sys.exit("No refresh token returned. Revoke prior access at "
                  "https://myaccount.google.com/permissions and retry.")
 
-    print("\n=== Set these as environment variables (Pi / Portainer) ===\n")
-    print(f"GOOGLE_CLIENT_ID={creds.client_id}")
-    print(f"GOOGLE_CLIENT_SECRET={creds.client_secret}")
-    print(f"GOOGLE_REFRESH_TOKEN={creds.refresh_token}")
-    print("\nKeep these secret. Do not commit them.")
+    values = {
+        "GOOGLE_CLIENT_ID": creds.client_id,
+        "GOOGLE_CLIENT_SECRET": creds.client_secret,
+        "GOOGLE_REFRESH_TOKEN": creds.refresh_token,
+    }
+
+    # Write to a git-ignored file so you never have to copy from the terminal.
+    repo_root = os.path.dirname(here)
+    out_path = os.path.join(repo_root, "google_creds.env")
+    with open(out_path, "w", encoding="utf-8") as f:
+        for key, val in values.items():
+            f.write(f"{key}={val}\n")
+    print(f"\nSaved credentials to: {out_path}")
+    print("Open that file (git-ignored) and paste the 3 lines into Portainer.\n")
+
+    _self_test(values)
+
+
+def _self_test(values):
+    """Immediately verify the new credentials against Google, no copy needed."""
+    for key, val in values.items():
+        os.environ[key] = val
+
+    import google_sync  # imported after env is set so config picks it up
+
+    print("Testing Google connection...")
+    events = google_sync.fetch_events()
+    tasks = google_sync.fetch_tasks()
+
+    print(f"\n  Calendar events today: {len(events)}")
+    for e in events[:5]:
+        print(f"    {e.time_label:>9}  {e.title}")
+    print(f"\n  Open tasks: {len(tasks)}")
+    for t in tasks[:5]:
+        print(f"    [ ] {t.title}")
+
+    if events or tasks:
+        print("\n✓ Google is working. Paste google_creds.env into Portainer to "
+              "deploy.")
+    else:
+        print("\nConnected, but nothing came back — you may just have no events/"
+              "tasks today. Try adding a test event and re-running.")
 
 
 if __name__ == "__main__":
