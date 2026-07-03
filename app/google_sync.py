@@ -34,7 +34,10 @@ def _access_token():
         "refresh_token": config.GOOGLE_REFRESH_TOKEN,
         "grant_type": "refresh_token",
     })
-    resp.raise_for_status()
+    if not resp.ok:
+        # Surface Google's actual reason (e.g. invalid_grant / invalid_client)
+        # instead of a bare "400 Bad Request".
+        raise RuntimeError(f"token exchange {resp.status_code}: {resp.text}")
     return resp.json()["access_token"]
 
 
