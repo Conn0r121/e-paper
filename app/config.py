@@ -62,6 +62,9 @@ GOOGLE_CALENDAR_ID = os.environ.get("GOOGLE_CALENDAR_ID", "primary").strip()
 # the full day.
 HIDE_PAST_EVENTS = os.environ.get("HIDE_PAST_EVENTS", "1").strip() not in ("", "0")
 
+# Shuffle the task list on each refresh. SHUFFLE_TASKS=0 to keep Google's order.
+SHUFFLE_TASKS = os.environ.get("SHUFFLE_TASKS", "1").strip() not in ("", "0")
+
 # --- Panel ------------------------------------------------------------------
 # Waveshare 5.83" V2 is 648 x 480. Used directly for the Windows preview and
 # as a fallback if the hardware doesn't report its own dimensions.

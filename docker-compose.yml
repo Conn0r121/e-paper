@@ -29,6 +29,8 @@ services:
       - GOOGLE_CALENDAR_ID=${GOOGLE_CALENDAR_ID:-primary}
       # Show only in-progress/upcoming events (all-day always shown). 0 = full day.
       - HIDE_PAST_EVENTS=1
+      # Shuffle task order each refresh. 0 = keep Google's order.
+      - SHUFFLE_TASKS=1
       # Workaround for the fading panel: white-on-black holds far better.
       # Set to 0 to go back to the light design.
       - DARK_MODE=1

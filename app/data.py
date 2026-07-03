@@ -1,6 +1,7 @@
 """Data sources for the dashboard: weather and local system stats."""
 
 import logging
+import random
 import time
 from dataclasses import dataclass
 
@@ -123,10 +124,17 @@ def _drop_ended(events):
 
 
 def get_tasks():
-    """Return open to-do items as a list[Task] (from Google Tasks)."""
+    """Return open to-do items as a list[Task] (from Google Tasks).
+
+    Optionally shuffled each refresh so the order varies and, when there are
+    more tasks than fit, different ones surface over time.
+    """
     import google_sync
 
-    return google_sync.fetch_tasks()
+    tasks = google_sync.fetch_tasks()
+    if config.SHUFFLE_TASKS:
+        random.shuffle(tasks)
+    return tasks
 
 
 def get_cpu_temp():
