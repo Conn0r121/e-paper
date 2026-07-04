@@ -32,6 +32,7 @@ class Task:
 
     title: str             # "Pay electric bill"
     due_label: str = ""    # "" or "Today" / "Overdue" (optional)
+    due_date: object = None  # datetime.date or None; used for ordering
 
 
 @dataclass
@@ -126,15 +127,19 @@ def _drop_ended(events):
 def get_tasks():
     """Return open to-do items as a list[Task] (from Google Tasks).
 
-    Optionally shuffled each refresh so the order varies and, when there are
-    more tasks than fit, different ones surface over time.
+    Tasks with a due date come first, ordered by due date (soonest/most overdue
+    first). Undated tasks follow, shuffled each refresh (unless SHUFFLE_TASKS=0)
+    so different ones surface over time.
     """
     import google_sync
 
     tasks = google_sync.fetch_tasks()
+    dated = sorted((t for t in tasks if t.due_date is not None),
+                   key=lambda t: t.due_date)
+    undated = [t for t in tasks if t.due_date is None]
     if config.SHUFFLE_TASKS:
-        random.shuffle(tasks)
-    return tasks
+        random.shuffle(undated)
+    return dated + undated
 
 
 def get_cpu_temp():

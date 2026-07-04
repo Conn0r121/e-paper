@@ -129,20 +129,28 @@ def fetch_tasks():
             title = (item.get("title") or "").strip()
             if not title:
                 continue  # Google returns blank placeholder tasks
-            tasks.append(Task(title=title, due_label=_due_label(item.get("due"))))
+            due_date = _parse_due(item.get("due"))
+            tasks.append(Task(title=title, due_label=_due_label(due_date),
+                              due_date=due_date))
         return tasks
     except Exception as e:
         log.error("Google Tasks fetch failed: %s", e)
         return []
 
 
-def _due_label(due):
-    """Turn a task's RFC3339 due date into a short label, or ''."""
+def _parse_due(due):
+    """Parse a task's RFC3339 due value into a date, or None."""
     if not due:
-        return ""
+        return None
     try:
-        due_date = dt.datetime.fromisoformat(due.replace("Z", "+00:00")).date()
+        return dt.datetime.fromisoformat(due.replace("Z", "+00:00")).date()
     except ValueError:
+        return None
+
+
+def _due_label(due_date):
+    """Turn a due date into a short label, or ''."""
+    if due_date is None:
         return ""
     today = dt.datetime.now().astimezone().date()
     if due_date < today:
