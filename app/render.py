@@ -46,7 +46,7 @@ COL_FIRST_ROW = 186       # first item row in each column
 LINE_H = 30               # height of one wrapped text line
 ITEM_GAP = 12             # gap between items (each item may span 1-2 lines)
 MAX_LINES = 2             # max wrapped lines per item before ellipsis
-FOOTER_RULE_Y = 438       # hairline above the footer
+BOTTOM_MARGIN = 16        # space below the columns
 COL_GAP = 28              # horizontal gap between the two columns
 
 # --- Type scale -------------------------------------------------------------
@@ -58,7 +58,6 @@ F_LABEL = 20
 F_ITEM = 24
 F_ITEM_TIME = 22
 F_EMPTY = 24
-F_FOOTER = 18
 
 TIME_COL_W = 112          # max width of the time sub-column inside SCHEDULE
 MARKER_W = 22             # width reserved for the bullet / checkbox
@@ -147,7 +146,7 @@ def _draw_header(draw, width, d):
               width=RULE_W)
 
 
-def _draw_schedule(draw, x, w, events):
+def _draw_schedule(draw, x, w, events, bottom):
     """Left column: today's merged calendar, titles wrapping to 2 lines."""
     _text(draw, (x, COL_TOP), "SCHEDULE", _font(F_LABEL))
     if not events:
@@ -163,14 +162,14 @@ def _draw_schedule(draw, x, w, events):
     title_w = x + w - title_x
     item_font = _font(F_ITEM)
 
-    # Reserve a line so the "+N more" note never spills into the footer.
-    bottom = FOOTER_RULE_Y - 8 - LINE_H
+    # Reserve a line so the "+N more" note stays inside the column.
+    limit = bottom - LINE_H
     y = COL_FIRST_ROW
     shown = 0
     for ev in events:
         lines = _wrap(draw, ev.title, item_font, title_w, MAX_LINES)
         h = len(lines) * LINE_H
-        if y + h > bottom:
+        if y + h > limit:
             break
         _bullet(draw, x, y + F_ITEM // 2, filled=(ev.source == "work"))
         _text(draw, (time_x, y), ev.time_label, time_font)
@@ -183,7 +182,7 @@ def _draw_schedule(draw, x, w, events):
         _text(draw, (time_x, y), f"+{len(events) - shown} more", time_font)
 
 
-def _draw_tasks(draw, x, w, tasks):
+def _draw_tasks(draw, x, w, tasks, bottom):
     """Right column: open to-do items, titles wrapping to 2 lines."""
     _text(draw, (x, COL_TOP), "TASKS", _font(F_LABEL))
     if not tasks:
@@ -194,14 +193,14 @@ def _draw_tasks(draw, x, w, tasks):
     title_w = x + w - title_x
     item_font = _font(F_ITEM)
 
-    # Reserve a line so the "+N more" note never spills into the footer.
-    bottom = FOOTER_RULE_Y - 8 - LINE_H
+    # Reserve a line so the "+N more" note stays inside the column.
+    limit = bottom - LINE_H
     y = COL_FIRST_ROW
     shown = 0
     for task in tasks:
         lines = _wrap(draw, task.title, item_font, title_w, MAX_LINES)
         h = len(lines) * LINE_H
-        if y + h > bottom:
+        if y + h > limit:
             break
         _task_icon(draw, x, y + F_ITEM // 2, _task_status(task))
         for li, line in enumerate(lines):
@@ -222,28 +221,6 @@ def _task_status(task):
     return "normal"
 
 
-def _draw_footer(draw, width, d):
-    right_edge = width - MARGIN
-    draw.line((MARGIN, FOOTER_RULE_Y, right_edge, FOOTER_RULE_Y), fill=BLACK,
-              width=RULE_W)
-    y = FOOTER_RULE_Y + 12
-
-    # Legend on the left: ● work  ○ personal
-    font = _font(F_FOOTER)
-    cy = y + F_FOOTER // 2
-    _bullet(draw, MARGIN, cy, filled=True, r=5)
-    _text(draw, (MARGIN + 16, y), "work", font)
-    off = MARGIN + 16 + draw.textlength("work", font=font) + 18
-    _bullet(draw, int(off), cy, filled=False, r=5)
-    _text(draw, (int(off) + 16, y), "personal", font)
-    legend_end = int(off) + 16 + draw.textlength("personal", font=font)
-
-    # System status on the right, using whatever width the legend leaves
-    status = _fit(draw, f"{d.city} · CPU {d.cpu_temp} · up {d.uptime}",
-                  font, right_edge - legend_end - 20)
-    _right(draw, right_edge, y, status, font)
-
-
 def render_dashboard(width, height, d, dark=None):
     """Build and return the dashboard image for DashboardData ``d``.
 
@@ -262,12 +239,12 @@ def render_dashboard(width, height, d, dark=None):
     col1_x = MARGIN
     col2_x = MARGIN + col_w + COL_GAP
     divider_x = MARGIN + col_w + COL_GAP // 2
-    draw.line((divider_x, COL_TOP, divider_x, FOOTER_RULE_Y - 8), fill=BLACK,
+    bottom = height - BOTTOM_MARGIN
+    draw.line((divider_x, COL_TOP, divider_x, bottom), fill=BLACK,
               width=DIVIDER_W)
 
-    _draw_schedule(draw, col1_x, col_w, d.events)
-    _draw_tasks(draw, col2_x, col_w, d.tasks)
-    _draw_footer(draw, width, d)
+    _draw_schedule(draw, col1_x, col_w, d.events, bottom)
+    _draw_tasks(draw, col2_x, col_w, d.tasks, bottom)
 
     if dark:
         canvas = ImageOps.invert(canvas.convert("L")).convert("1")
