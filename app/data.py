@@ -93,7 +93,8 @@ def get_weather():
         return {
             "city": (city.strip() or "UNKNOWN").upper(),
             "condition": condition.strip() or "N/A",
-            "temp": temp.strip() or "--",
+            # Drop the leading "+" wttr.in puts on positive temps ("+72°F").
+            "temp": temp.strip().lstrip("+") or "--",
         }
     except Exception as e:
         log.error("Weather fetch failed: %s", e)

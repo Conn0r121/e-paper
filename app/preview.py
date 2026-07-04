@@ -56,7 +56,7 @@ def _task(title, due_label=""):
 SCENARIOS = [
     ("Typical day", data.DashboardData(
         clock="14:30", weekday="Tuesday", date_long="July 1", city="ROCHESTER",
-        temp="+72°F", condition="Partly Cloudy",
+        temp="72°F", condition="Partly Cloudy",
         events=[
             _ev("9:00 AM", "Standup", "work"),
             _ev("11:30 AM", "Design review", "work"),
@@ -72,13 +72,13 @@ SCENARIOS = [
     )),
     ("Both columns empty", data.DashboardData(
         clock="07:12", weekday="Saturday", date_long="July 5", city="ROCHESTER",
-        temp="+64°F", condition="Clear",
+        temp="64°F", condition="Clear",
         events=[], tasks=[],
         cpu_temp="44.0°C", uptime="6d 1h", interval_min=5,
     )),
     ("Busy day (both overflow)", data.DashboardData(
         clock="08:05", weekday="Wednesday", date_long="July 2", city="ROCHESTER",
-        temp="+70°F", condition="Cloudy",
+        temp="70°F", condition="Cloudy",
         events=[
             _ev("8:30 AM", "Standup", "work"),
             _ev("9:00 AM", "Sprint planning", "work"),
@@ -97,7 +97,7 @@ SCENARIOS = [
     ("Long titles + long city", data.DashboardData(
         clock="17:42", weekday="Thursday", date_long="July 3",
         city="FAIRPORT, NEW YORK, UNITED STATES",
-        temp="+64°F", condition="Heavy Thunderstorm And Rain",
+        temp="64°F", condition="Heavy Thunderstorm And Rain",
         events=[
             _ev("All day", "Quarterly planning offsite at the downtown office", "work"),
             _ev("6:30 PM", "Dinner reservation with the whole extended family", "personal"),

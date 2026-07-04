@@ -43,7 +43,9 @@ MARGIN = 28
 HEADER_RULE_Y = 132       # hairline under the header
 COL_TOP = 148             # column heading baseline
 COL_FIRST_ROW = 186       # first item row in each column
-ROW_H = 46                # vertical space per item
+LINE_H = 30               # height of one wrapped text line
+ITEM_GAP = 12             # gap between items (each item may span 1-2 lines)
+MAX_LINES = 2             # max wrapped lines per item before ellipsis
 FOOTER_RULE_Y = 438       # hairline above the footer
 COL_GAP = 28              # horizontal gap between the two columns
 
@@ -57,7 +59,6 @@ F_ITEM = 24
 F_ITEM_TIME = 22
 F_EMPTY = 24
 F_FOOTER = 18
-F_TAG = 16                 # small "OVERDUE" / "TODAY" tag on dated tasks
 
 TIME_COL_W = 112          # max width of the time sub-column inside SCHEDULE
 MARKER_W = 22             # width reserved for the bullet / checkbox
@@ -102,20 +103,35 @@ def _checkbox(draw, x, cy, s=15):
                    width=MARKER_W_PX)
 
 
-def _due_tag(draw, right, y, text, font, filled):
-    """Right-aligned due tag: a dot (filled=overdue, hollow=today) + label."""
-    tw = draw.textlength(text, font=font)
-    dot_d, gap = 12, 6
-    sx = right - (dot_d + gap + int(tw))
-    cy = y + F_ITEM // 2
-    r = dot_d // 2
-    draw.ellipse((sx, cy - r, sx + dot_d, cy + r),
-                 fill=BLACK if filled else WHITE, outline=BLACK, width=2)
-    _text(draw, (sx + dot_d + gap, y + (F_ITEM - F_TAG) // 2 - 1), text, font)
+def _task_icon(draw, x, cy, status):
+    """Left marker encoding task status: ! overdue, filled dot today, else box."""
+    if status == "overdue":
+        _text(draw, (x + 1, cy - F_ITEM // 2), "!", _font(F_ITEM))
+    elif status == "today":
+        r = 6
+        cx = x + 7
+        draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=BLACK)
+    else:
+        _checkbox(draw, x, cy)
 
 
-def _fit_rows(top, bottom):
-    return max(0, (bottom - top) // ROW_H)
+def _wrap(draw, text, font, max_w, max_lines):
+    """Word-wrap text into at most max_lines lines, ellipsizing the overflow."""
+    words = text.split()
+    lines, cur, i = [], "", 0
+    while i < len(words):
+        trial = words[i] if not cur else cur + " " + words[i]
+        if not cur or draw.textlength(trial, font=font) <= max_w:
+            cur, i = trial, i + 1
+        else:
+            lines.append(cur)
+            cur = ""
+            if len(lines) == max_lines - 1:
+                cur = " ".join(words[i:])
+                break
+    if cur:
+        lines.append(cur)
+    return [_fit(draw, ln, font, max_w) for ln in lines[:max_lines]] or [""]
 
 
 def _draw_header(draw, width, d):
@@ -132,70 +148,78 @@ def _draw_header(draw, width, d):
 
 
 def _draw_schedule(draw, x, w, events):
-    """Left column: today's merged calendar."""
+    """Left column: today's merged calendar, titles wrapping to 2 lines."""
     _text(draw, (x, COL_TOP), "SCHEDULE", _font(F_LABEL))
     if not events:
         _text(draw, (x, COL_FIRST_ROW + 6), "Nothing scheduled", _font(F_EMPTY))
         return
 
-    rows = _fit_rows(COL_FIRST_ROW, FOOTER_RULE_Y)
-    shown, overflow = _paginate(events, rows)
-
     # Size the time sub-column to the widest time label so it never collides
     # with the title, but cap it so long titles still get room.
     time_font = _font(F_ITEM_TIME)
     time_x = x + MARKER_W
-    widest = max(draw.textlength(ev.time_label, font=time_font) for ev in shown)
+    widest = max(draw.textlength(ev.time_label, font=time_font) for ev in events)
     title_x = time_x + min(int(widest) + 12, TIME_COL_W)
     title_w = x + w - title_x
+    item_font = _font(F_ITEM)
+
+    # Reserve a line so the "+N more" note never spills into the footer.
+    bottom = FOOTER_RULE_Y - 8 - LINE_H
     y = COL_FIRST_ROW
-    for ev in shown:
-        cy = y + F_ITEM // 2
-        _bullet(draw, x, cy, filled=(ev.source == "work"))
-        _text(draw, (time_x, y), ev.time_label, _font(F_ITEM_TIME))
-        _text(draw, (title_x, y), _fit(draw, ev.title, _font(F_ITEM), title_w),
-              _font(F_ITEM))
-        y += ROW_H
-    if overflow:
-        _text(draw, (time_x, y), f"+{overflow} more", _font(F_ITEM_TIME))
+    shown = 0
+    for ev in events:
+        lines = _wrap(draw, ev.title, item_font, title_w, MAX_LINES)
+        h = len(lines) * LINE_H
+        if y + h > bottom:
+            break
+        _bullet(draw, x, y + F_ITEM // 2, filled=(ev.source == "work"))
+        _text(draw, (time_x, y), ev.time_label, time_font)
+        for li, line in enumerate(lines):
+            _text(draw, (title_x, y + li * LINE_H), line, item_font)
+        y += h + ITEM_GAP
+        shown += 1
+
+    if shown < len(events):
+        _text(draw, (time_x, y), f"+{len(events) - shown} more", time_font)
 
 
 def _draw_tasks(draw, x, w, tasks):
-    """Right column: open to-do items."""
+    """Right column: open to-do items, titles wrapping to 2 lines."""
     _text(draw, (x, COL_TOP), "TASKS", _font(F_LABEL))
     if not tasks:
         _text(draw, (x, COL_FIRST_ROW + 6), "No tasks", _font(F_EMPTY))
         return
 
-    rows = _fit_rows(COL_FIRST_ROW, FOOTER_RULE_Y)
-    shown, overflow = _paginate(tasks, rows)
-
     title_x = x + MARKER_W + 4
-    col_right = x + w
-    tag_font = _font(F_TAG)
+    title_w = x + w - title_x
+    item_font = _font(F_ITEM)
+
+    # Reserve a line so the "+N more" note never spills into the footer.
+    bottom = FOOTER_RULE_Y - 8 - LINE_H
     y = COL_FIRST_ROW
-    for task in shown:
-        _checkbox(draw, x, y + F_ITEM // 2)
-        tag = task.due_label.upper() if task.due_label else ""
-        if tag:
-            tag_w = draw.textlength(tag, font=tag_font)
-            _due_tag(draw, col_right, y, tag, tag_font, filled=(tag == "OVERDUE"))
-            title_w = col_right - title_x - int(tag_w) - 22
-        else:
-            title_w = col_right - title_x
-        _text(draw, (title_x, y), _fit(draw, task.title, _font(F_ITEM), title_w),
-              _font(F_ITEM))
-        y += ROW_H
-    if overflow:
-        _text(draw, (title_x, y), f"+{overflow} more", _font(F_ITEM_TIME))
+    shown = 0
+    for task in tasks:
+        lines = _wrap(draw, task.title, item_font, title_w, MAX_LINES)
+        h = len(lines) * LINE_H
+        if y + h > bottom:
+            break
+        _task_icon(draw, x, y + F_ITEM // 2, _task_status(task))
+        for li, line in enumerate(lines):
+            _text(draw, (title_x, y + li * LINE_H), line, item_font)
+        y += h + ITEM_GAP
+        shown += 1
+
+    if shown < len(tasks):
+        _text(draw, (title_x, y), f"+{len(tasks) - shown} more", _font(F_ITEM_TIME))
 
 
-def _paginate(items, rows):
-    """Return (visible items, hidden count), reserving a row for '+N more'."""
-    if len(items) <= rows:
-        return items, 0
-    shown = items[:max(0, rows - 1)]
-    return shown, len(items) - len(shown)
+def _task_status(task):
+    label = (task.due_label or "").lower()
+    if label == "overdue":
+        return "overdue"
+    if label == "today":
+        return "today"
+    return "normal"
 
 
 def _draw_footer(draw, width, d):
