@@ -64,8 +64,8 @@ SCENARIOS = [
             _ev("6:00 PM", "Gym", "personal"),
         ],
         tasks=[
-            _task("Pay electric bill"),
-            _task("Email Sam about PR"),
+            _task("Pay electric bill", "Overdue"),
+            _task("Email Sam about PR", "Today"),
             _task("Order groceries"),
         ],
         cpu_temp="48.3°C", uptime="3d 4h", interval_min=5,

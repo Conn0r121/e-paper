@@ -57,6 +57,7 @@ F_ITEM = 24
 F_ITEM_TIME = 22
 F_EMPTY = 24
 F_FOOTER = 18
+F_TAG = 16                 # small "OVERDUE" / "TODAY" tag on dated tasks
 
 TIME_COL_W = 112          # max width of the time sub-column inside SCHEDULE
 MARKER_W = 22             # width reserved for the bullet / checkbox
@@ -99,6 +100,18 @@ def _checkbox(draw, x, cy, s=15):
     """Draw an empty checkbox centred vertically on cy."""
     draw.rectangle((x, cy - s // 2, x + s, cy + s // 2), outline=BLACK,
                    width=MARKER_W_PX)
+
+
+def _due_tag(draw, right, y, text, font, filled):
+    """Right-aligned due tag: a dot (filled=overdue, hollow=today) + label."""
+    tw = draw.textlength(text, font=font)
+    dot_d, gap = 12, 6
+    sx = right - (dot_d + gap + int(tw))
+    cy = y + F_ITEM // 2
+    r = dot_d // 2
+    draw.ellipse((sx, cy - r, sx + dot_d, cy + r),
+                 fill=BLACK if filled else WHITE, outline=BLACK, width=2)
+    _text(draw, (sx + dot_d + gap, y + (F_ITEM - F_TAG) // 2 - 1), text, font)
 
 
 def _fit_rows(top, bottom):
@@ -158,10 +171,18 @@ def _draw_tasks(draw, x, w, tasks):
     shown, overflow = _paginate(tasks, rows)
 
     title_x = x + MARKER_W + 4
-    title_w = x + w - title_x
+    col_right = x + w
+    tag_font = _font(F_TAG)
     y = COL_FIRST_ROW
     for task in shown:
         _checkbox(draw, x, y + F_ITEM // 2)
+        tag = task.due_label.upper() if task.due_label else ""
+        if tag:
+            tag_w = draw.textlength(tag, font=tag_font)
+            _due_tag(draw, col_right, y, tag, tag_font, filled=(tag == "OVERDUE"))
+            title_w = col_right - title_x - int(tag_w) - 22
+        else:
+            title_w = col_right - title_x
         _text(draw, (title_x, y), _fit(draw, task.title, _font(F_ITEM), title_w),
               _font(F_ITEM))
         y += ROW_H
